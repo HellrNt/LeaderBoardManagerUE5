@@ -123,15 +123,8 @@ void ULeaderboardManager::OnLeaderboardReadComplete(bool bWasSuccessful, FOnline
                 {
                     return A.Rank < B.Rank;
                 });
-
-                if (LeaderboardEntries[LeaderboardReadRef->LeaderboardName.ToString()].Num() >= 50)
-                {
-                    if (MyRank <= 1)
-                    {
-                        OnLeaderboardAchievment.Broadcast("LeaderboardLegend");
-                    }
-                }
             }
+            
             if (!bIsDoNotShowWindow)
             {
                 OnLeaderboardWindowShow.Broadcast(bIsFriendLeaderboard);
@@ -179,7 +172,32 @@ void ULeaderboardManager::OnLeaderboardFlushComplete(FName SessionName, bool bWa
     OnLeaderBoardFlushCompleted.Broadcast(SessionName, bWasSuccessful);
 }
 
-// ===== Steam реализация =====
+void ULeaderboardManager::GetMappedLeaderboardAndStat(const FString& DisplayName, FString& OutLeaderboardName, FString& OutStatName)
+{
+    if (!LeaderboardMappingTable) return;
+
+    const FLeaderboardPlatformMappingRow* Mapping = LeaderboardMappingTable->FindRow<FLeaderboardPlatformMappingRow>(*DisplayName, TEXT(""));
+    if (!Mapping) return;
+
+    switch (PlatformType)
+    {
+        case ELeaderboardPlatform::Steam:
+        {
+            OutLeaderboardName = Mapping->SteamLeaderboardName;
+            OutStatName = Mapping->SteamStatName;
+            break;
+
+        }
+        case ELeaderboardPlatform::Epic:
+        {
+            OutLeaderboardName = Mapping->EpicLeaderboardName;
+            OutStatName = Mapping->EpicStatName;
+            break;
+        }
+    }
+}
+
+// ===== Steam stuff =====
 
 void ULeaderboardManager::WriteToSteamLeaderboard(const FString& WorldName, const FString& LeaderboardName, int32 Score)
 {
@@ -255,7 +273,6 @@ void ULeaderboardManager::ReadFromSteamLeaderboard(const FString& WorldName, con
             LeaderboardReadRef->ColumnMetadata.Add(ColumnMetaData);
             LeaderboardReadRef->Rows.Empty();
 
-            // Привязываем делегат
             QueryLeaderboardDelegateHandle =
                 Leaderboards->AddOnLeaderboardReadCompleteDelegate_Handle(FOnLeaderboardReadCompleteDelegate::CreateUObject(
                     this,
@@ -284,32 +301,7 @@ void ULeaderboardManager::ReadFromSteamLeaderboard(const FString& WorldName, con
     }
 }
 
-// ===== Epic реализация =====
-
-void ULeaderboardManager::GetMappedLeaderboardAndStat(const FString& DisplayName, FString& OutLeaderboardName, FString& OutStatName)
-{
-    if (!LeaderboardMappingTable) return;
-
-    const FLeaderboardPlatformMappingRow* Mapping = LeaderboardMappingTable->FindRow<FLeaderboardPlatformMappingRow>(*DisplayName, TEXT(""));
-    if (!Mapping) return;
-
-    switch (PlatformType)
-    {
-        case ELeaderboardPlatform::Steam:
-        {
-            OutLeaderboardName = Mapping->SteamLeaderboardName;
-            OutStatName = Mapping->SteamStatName;
-            break;
-
-        }
-        case ELeaderboardPlatform::Epic:
-        {
-            OutLeaderboardName = Mapping->EpicLeaderboardName;
-            OutStatName = Mapping->EpicStatName;
-            break;
-        }
-    }
-}
+// ===== Epic stuff =====
 
 void ULeaderboardManager::WriteToEpicLeaderboard(const FString& WorldName, const FString& LeaderboardName, int32 Score)
 {
@@ -375,7 +367,6 @@ void ULeaderboardManager::ReadFromEpicLeaderboard(const FString& WorldName, cons
             LeaderboardReadRef->SortedColumn = FName(*StatName);
             FColumnMetaData ColumnMetaData = FColumnMetaData(FName(*StatName), EOnlineKeyValuePairDataType::Int32);
             LeaderboardReadRef->ColumnMetadata.Add(ColumnMetaData);
-            // Привязываем делегат
             QueryLeaderboardDelegateHandle =
                 Leaderboards->AddOnLeaderboardReadCompleteDelegate_Handle(FOnLeaderboardReadCompleteDelegate::CreateUObject(
                     this,
