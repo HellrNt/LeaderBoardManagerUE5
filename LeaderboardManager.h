@@ -12,7 +12,6 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnLeaderBoardFlushCompleted, FName, SessionName, bool, bWasSuccessful);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnLeaderBoardQueryCompleted, FName, SessionName, bool, bWasSuccessful);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnLeaderboardWindowShow, bool);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnLeaderboardAchievment, const FString&);
 
 UENUM(BlueprintType)
 enum class ELeaderboardPlatform : uint8
@@ -83,7 +82,6 @@ public:
     const TMap<FString, TArray<FLeaderboardEntry>>& GetLeaderboardEntries() const;
 
     FOnLeaderboardWindowShow OnLeaderboardWindowShow;
-    FOnLeaderboardAchievment OnLeaderboardAchievment;
 
     UPROPERTY(BlueprintAssignable, Category = "Leaderboard")
     FOnLeaderBoardFlushCompleted OnLeaderBoardFlushCompleted;
